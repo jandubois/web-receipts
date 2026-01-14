@@ -133,7 +133,7 @@ struct WebReceipts {
         // File exists, find unique name with suffix
         var counter = 2
         while true {
-            let newName = "\(base) - \(counter)"
+            let newName = "\(base).\(counter)"
             let newPath = destinationFolder.appendingPathComponent("\(newName).pdf")
             if !FileManager.default.fileExists(atPath: newPath.path) {
                 return newName
