@@ -46,7 +46,6 @@ struct WebReceipts {
                 are handled by appending .2, .3, etc.
 
             SETUP:
-                Requires a "Save to Web Receipts" PDF workflow for Safari.
                 Bind to a hotkey using Automator, Shortcuts, Alfred, or similar.
             """)
     }
@@ -186,7 +185,7 @@ struct WebReceipts {
         }
     }
 
-    // Safari: Use "Save to Web Receipts" PDF workflow, then rename if needed
+    // Safari: Use PDF menu's "Save to Web Receipts" option, then rename if needed
     static func exportSafariPDF(expectedFilename: String) throws {
         let script = """
             tell application "Safari" to activate
@@ -271,7 +270,7 @@ struct WebReceipts {
         return "Web Receipts"
     }
 
-    // Chrome: Manual approach (PDF Services workflows don't work in Chrome)
+    // Chrome: Manual save dialog approach (PDF menu options don't work in Chrome)
     static func exportChromePDF(filename: String) throws {
         let script = """
             tell application "Google Chrome" to activate

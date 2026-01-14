@@ -17,7 +17,7 @@ A macOS command-line tool that saves the current browser tab as a PDF to `~/Docu
 ## Installation
 
 ```bash
-swift build -c release
+make release
 cp .build/release/web-receipts /usr/local/bin/
 ```
 
