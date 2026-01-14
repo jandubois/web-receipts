@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract version from tag
         id: version
@@ -36,7 +38,8 @@ jobs:
       - name: Get tag annotation
         id: tag_message
         run: |
-          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+          # Extract just the tag message (after the blank line in tag object)
+          TAG_MESSAGE=$(git cat-file tag ${{ github.ref_name }} | sed '1,/^$/d')
           echo "MESSAGE<<EOF" >> $GITHUB_OUTPUT
           echo "$TAG_MESSAGE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
