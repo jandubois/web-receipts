@@ -232,7 +232,9 @@ struct WebReceipts {
 
             -- Navigate to folder with Cmd+Shift+G
             tell application "System Events"
-                keystroke "g" using {command down, shift down}
+                tell process "Safari"
+                    keystroke "g" using {command down, shift down}
+                end tell
             end tell
             delay 0.5
 
@@ -261,6 +263,11 @@ struct WebReceipts {
                 end tell
             end tell
             delay 1
+
+            -- Dismiss any stray popups
+            tell application "System Events"
+                key code 53
+            end tell
         """
 
         guard runAppleScript(script) != nil else {
@@ -337,6 +344,11 @@ struct WebReceipts {
                 end tell
             end tell
             delay 2
+
+            -- Dismiss any stray popups
+            tell application "System Events"
+                key code 53
+            end tell
         """
 
         guard runAppleScript(script) != nil else {
