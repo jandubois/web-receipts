@@ -27,10 +27,14 @@ struct WebReceipts {
             throw WebReceiptsError.noBrowserFound
         }
 
-        // Export PDF (browser provides filename from tab title)
-        try exportPDF(browser: browser)
+        // Get tab title and generate unique filename
+        let title = try getTabTitle(browser: browser)
+        let filename = generateUniqueFilename(base: sanitizeFilename(title))
 
-        print("Saved to Web Receipts")
+        // Export PDF
+        try exportPDF(browser: browser, filename: filename)
+
+        print("Saved: \(filename)")
     }
 
     enum Browser {
@@ -41,6 +45,7 @@ struct WebReceipts {
     enum WebReceiptsError: LocalizedError {
         case noBrowserFound
         case appleScriptError(String)
+        case noTitle
 
         var errorDescription: String? {
             switch self {
@@ -48,6 +53,8 @@ struct WebReceipts {
                 return "No supported browser (Safari or Chrome) is frontmost"
             case .appleScriptError(let message):
                 return "AppleScript error: \(message)"
+            case .noTitle:
+                return "Could not get tab title"
             }
         }
     }
@@ -74,18 +81,79 @@ struct WebReceipts {
         }
     }
 
-    // MARK: - PDF Export
+    // MARK: - Tab Title
 
-    static func exportPDF(browser: Browser) throws {
+    static func getTabTitle(browser: Browser) throws -> String {
+        let script: String
         switch browser {
         case .safari:
-            try exportSafariPDF()
+            script = """
+                tell application "Safari"
+                    return name of current tab of front window
+                end tell
+            """
         case .chrome:
-            try exportChromePDF()
+            script = """
+                tell application "Google Chrome"
+                    return title of active tab of front window
+                end tell
+            """
+        }
+
+        guard let title = runAppleScript(script), !title.isEmpty else {
+            throw WebReceiptsError.noTitle
+        }
+        return title
+    }
+
+    // MARK: - Filename Handling
+
+    static func sanitizeFilename(_ filename: String) -> String {
+        // Characters not allowed in macOS filenames
+        let invalidCharacters = CharacterSet(charactersIn: ":/\\")
+        var sanitized = filename.components(separatedBy: invalidCharacters).joined(separator: "-")
+
+        // Trim whitespace and limit length
+        sanitized = sanitized.trimmingCharacters(in: .whitespaces)
+        if sanitized.count > 200 {
+            sanitized = String(sanitized.prefix(200))
+        }
+
+        return sanitized.isEmpty ? "Untitled" : sanitized
+    }
+
+    static func generateUniqueFilename(base: String) -> String {
+        let pdfName = "\(base).pdf"
+        let targetPath = destinationFolder.appendingPathComponent(pdfName)
+
+        if !FileManager.default.fileExists(atPath: targetPath.path) {
+            return base  // Return without .pdf extension
+        }
+
+        // File exists, find unique name with suffix
+        var counter = 2
+        while true {
+            let newName = "\(base) - \(counter)"
+            let newPath = destinationFolder.appendingPathComponent("\(newName).pdf")
+            if !FileManager.default.fileExists(atPath: newPath.path) {
+                return newName
+            }
+            counter += 1
         }
     }
 
-    static func exportSafariPDF() throws {
+    // MARK: - PDF Export
+
+    static func exportPDF(browser: Browser, filename: String) throws {
+        switch browser {
+        case .safari:
+            try exportSafariPDF(filename: filename)
+        case .chrome:
+            try exportChromePDF(filename: filename)
+        }
+    }
+
+    static func exportSafariPDF(filename: String) throws {
         let script = """
             tell application "Safari" to activate
             delay 0.5
@@ -112,6 +180,20 @@ struct WebReceipts {
             end tell
             delay 0.5
 
+            -- Set filename (Tahoe: elements are in splitter group 1 of the save sheet)
+            tell application "System Events"
+                tell process "Safari"
+                    tell splitter group 1 of sheet 1 of sheet 1 of front window
+                        click text field "Save As:"
+                        delay 0.2
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(filename))"
+                    end tell
+                end tell
+            end tell
+            delay 0.3
+
             -- Navigate to folder with Cmd+Shift+G
             tell application "System Events"
                 keystroke "g" using {command down, shift down}
@@ -124,11 +206,15 @@ struct WebReceipts {
                 delay 0.3
                 keystroke return
             end tell
-            delay 1
+            delay 0.5
 
-            -- Press Return to Save
+            -- Click Save button
             tell application "System Events"
-                keystroke return
+                tell process "Safari"
+                    tell splitter group 1 of sheet 1 of sheet 1 of front window
+                        click button "Save"
+                    end tell
+                end tell
             end tell
             delay 1
         """
@@ -138,7 +224,7 @@ struct WebReceipts {
         }
     }
 
-    static func exportChromePDF() throws {
+    static func exportChromePDF(filename: String) throws {
         let script = """
             tell application "Google Chrome" to activate
             delay 1.5
@@ -159,13 +245,23 @@ struct WebReceipts {
             end tell
             delay 1
 
-            -- Navigate to folder with Cmd+Shift+G
+            -- Set filename (Tahoe: elements are in splitter group 1, dialog is on window "Print")
             tell application "System Events"
                 tell process "Google Chrome"
-                    tell sheet 1 of front window
-                        keystroke "g" using {command down, shift down}
+                    tell splitter group 1 of sheet 1 of window "Print"
+                        click text field "Save As:"
+                        delay 0.2
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(filename))"
                     end tell
                 end tell
+            end tell
+            delay 0.3
+
+            -- Navigate to folder with Cmd+Shift+G
+            tell application "System Events"
+                keystroke "g" using {command down, shift down}
             end tell
             delay 0.5
 
@@ -175,11 +271,15 @@ struct WebReceipts {
                 delay 0.3
                 keystroke return
             end tell
-            delay 1
+            delay 0.5
 
-            -- Press Return to Save (Save button is default)
+            -- Click Save button (Tahoe: button is in splitter group 1)
             tell application "System Events"
-                keystroke return
+                tell process "Google Chrome"
+                    tell splitter group 1 of sheet 1 of window "Print"
+                        click button "Save"
+                    end tell
+                end tell
             end tell
             delay 2
         """
