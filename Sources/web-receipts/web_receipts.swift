@@ -113,13 +113,11 @@ struct WebReceipts {
                 delay 0.3
                 keystroke return
             end tell
-            delay 0.5
+            delay 1
 
-            -- Click Save
+            -- Press Return to Save (Save button is default)
             tell application "System Events"
-                tell process "Safari"
-                    click button "Save" of sheet 1 of front window
-                end tell
+                keystroke return
             end tell
             delay 1
         """
@@ -166,13 +164,11 @@ struct WebReceipts {
                 delay 0.3
                 keystroke return
             end tell
-            delay 0.5
+            delay 1
 
-            -- Click Save
+            -- Press Return to Save (Save button is default)
             tell application "System Events"
-                tell process "Google Chrome"
-                    click button "Save" of sheet 1 of front window
-                end tell
+                keystroke return
             end tell
             delay 2
         """
