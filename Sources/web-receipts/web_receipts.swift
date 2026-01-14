@@ -98,13 +98,15 @@ struct WebReceipts {
             end tell
             delay 1
 
-            -- Click PDF menu and select "Save as PDF"
+            -- Click PDF menu button and select "Save as PDF"
             tell application "System Events"
                 tell process "Safari"
-                    tell sheet 1 of front window
-                        click menu button "PDF"
-                        delay 0.3
-                        click menu item "Save as PDF…" of menu 1 of menu button "PDF"
+                    tell splitter group 1 of sheet 1 of front window
+                        tell group 2
+                            click menu button 1
+                            delay 0.3
+                            click menu item "Save as PDF…" of menu 1 of menu button 1
+                        end tell
                     end tell
                 end tell
             end tell
@@ -112,11 +114,7 @@ struct WebReceipts {
 
             -- Navigate to folder with Cmd+Shift+G
             tell application "System Events"
-                tell process "Safari"
-                    tell sheet 1 of sheet 1 of front window
-                        keystroke "g" using {command down, shift down}
-                    end tell
-                end tell
+                keystroke "g" using {command down, shift down}
             end tell
             delay 0.5
 
