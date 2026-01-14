@@ -200,11 +200,19 @@ struct WebReceipts {
             end tell
             delay 0.5
 
-            -- Type path and go
+            -- Click on Go To Folder text field before typing
             tell application "System Events"
-                keystroke "\(escapeForAppleScript(destinationFolder.path))"
-                delay 0.3
-                keystroke return
+                tell process "Safari"
+                    tell sheet 1 of sheet 1 of sheet 1 of front window
+                        click text field 1
+                        delay 0.2
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(destinationFolder.path))"
+                        delay 0.3
+                        keystroke return
+                    end tell
+                end tell
             end tell
             delay 0.5
 
@@ -246,6 +254,7 @@ struct WebReceipts {
             delay 1
 
             -- Set filename (Tahoe: elements are in splitter group 1, dialog is on window "Print")
+            -- Chrome doesn't auto-add .pdf extension, so include it
             tell application "System Events"
                 tell process "Google Chrome"
                     tell splitter group 1 of sheet 1 of window "Print"
@@ -253,7 +262,7 @@ struct WebReceipts {
                         delay 0.2
                         keystroke "a" using {command down}
                         delay 0.1
-                        keystroke "\(escapeForAppleScript(filename))"
+                        keystroke "\(escapeForAppleScript(filename)).pdf"
                     end tell
                 end tell
             end tell
@@ -261,15 +270,25 @@ struct WebReceipts {
 
             -- Navigate to folder with Cmd+Shift+G
             tell application "System Events"
-                keystroke "g" using {command down, shift down}
+                tell process "Google Chrome"
+                    keystroke "g" using {command down, shift down}
+                end tell
             end tell
             delay 0.5
 
-            -- Type path and go
+            -- Click on Go To Folder text field before typing
             tell application "System Events"
-                keystroke "\(escapeForAppleScript(destinationFolder.path))"
-                delay 0.3
-                keystroke return
+                tell process "Google Chrome"
+                    tell sheet 1 of sheet 1 of window "Print"
+                        click text field 1
+                        delay 0.2
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(destinationFolder.path))"
+                        delay 0.3
+                        keystroke return
+                    end tell
+                end tell
             end tell
             delay 0.5
 
