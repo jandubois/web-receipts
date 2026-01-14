@@ -3,7 +3,6 @@ import AppKit
 
 @main
 struct WebReceipts {
-    static let version = "0.1.0"
     static let destinationFolder = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Documents/Web Receipts")
 
@@ -11,7 +10,7 @@ struct WebReceipts {
         let args = CommandLine.arguments.dropFirst()
 
         if args.contains("--version") || args.contains("-v") {
-            print("web-receipts \(version)")
+            print("web-receipts \(appVersion)")
             return
         }
 
