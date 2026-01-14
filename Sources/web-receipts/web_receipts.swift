@@ -170,9 +170,9 @@ struct WebReceipts {
             tell application "System Events"
                 tell process "Safari"
                     tell sheet 1 of front window
-                        -- Set filename by selecting all and typing
-                        set focused of text field "Save As:" to true
-                        delay 0.1
+                        -- Set filename by clicking, selecting all, and typing
+                        click text field "Save As:"
+                        delay 0.2
                         keystroke "a" using {command down}
                         delay 0.1
                         keystroke "\(escapeForAppleScript(filenameWithoutExt))"
@@ -187,7 +187,12 @@ struct WebReceipts {
             tell application "System Events"
                 tell process "Safari"
                     tell sheet 1 of sheet 1 of front window
-                        set value of text field 1 to "\(escapeForAppleScript(destinationFolder.path))"
+                        -- Type path using keystrokes
+                        click text field 1
+                        delay 0.1
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(destinationFolder.path))"
                         delay 0.3
                         keystroke return
                     end tell
@@ -237,9 +242,9 @@ struct WebReceipts {
             tell application "System Events"
                 tell process "Google Chrome"
                     tell sheet 1 of front window
-                        -- Set filename by selecting all and typing
-                        set focused of text field "Save As:" to true
-                        delay 0.1
+                        -- Set filename by clicking, selecting all, and typing
+                        click text field "Save As:"
+                        delay 0.2
                         keystroke "a" using {command down}
                         delay 0.1
                         keystroke "\(escapeForAppleScript(filenameWithoutExt))"
@@ -254,7 +259,12 @@ struct WebReceipts {
             tell application "System Events"
                 tell process "Google Chrome"
                     tell sheet 1 of sheet 1 of front window
-                        set value of text field 1 to "\(escapeForAppleScript(destinationFolder.path))"
+                        -- Type path using keystrokes
+                        click text field 1
+                        delay 0.1
+                        keystroke "a" using {command down}
+                        delay 0.1
+                        keystroke "\(escapeForAppleScript(destinationFolder.path))"
                         delay 0.3
                         keystroke return
                     end tell
