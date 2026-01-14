@@ -21,7 +21,7 @@ This works but is fragile - UI hierarchy paths like `splitter group 1 of sheet 1
 
 ## Peekaboo Architecture
 
-Peekaboo (`/Users/jan/git/Peekaboo`) is a comprehensive macOS automation suite with:
+Peekaboo (https://github.com/steipete/Peekaboo) is a comprehensive macOS automation suite with:
 
 ### Key Commands
 - `peekaboo see` - Capture and analyze UI elements, returns element IDs
@@ -40,7 +40,7 @@ Peekaboo (`/Users/jan/git/Peekaboo`) is a comprehensive macOS automation suite w
 | Error handling | Limited | Comprehensive |
 
 ### Service Architecture
-Located in `/Users/jan/git/Peekaboo/Core/PeekabooAutomationKit/Sources/`:
+Located in `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/`:
 - `Services/UI/ClickService.swift` - Mouse interactions
 - `Services/UI/HotkeyService.swift` - Keyboard shortcuts
 - `Services/UI/TypeService.swift` - Text input
@@ -48,7 +48,7 @@ Located in `/Users/jan/git/Peekaboo/Core/PeekabooAutomationKit/Sources/`:
 
 ## AXorcist Library
 
-AXorcist (`/Users/jan/git/AXorcist`) is a Swift wrapper around macOS accessibility APIs.
+AXorcist (https://github.com/steipete/AXorcist) is a Swift wrapper around macOS accessibility APIs.
 
 ### Key Files
 
@@ -136,7 +136,7 @@ Copy from `Element+UIAutomation.swift`:
 ```swift
 // Package.swift
 dependencies: [
-    .package(path: "../AXorcist"),
+    .package(url: "https://github.com/steipete/AXorcist", from: "1.0.0"),
 ]
 ```
 Use full accessibility APIs for element finding and interaction.
@@ -159,7 +159,7 @@ cat /tmp/safari-ui.json | jq '.data.ui_elements[] | select(.label | contains("PD
 peekaboo see --app "Safari" --annotate --path /tmp/safari-debug.png
 ```
 
-A skill file has been created at `~/.claude/skills/peekaboo-gui-debugging.md` with more details.
+A Claude Code skill file exists at `~/.claude/skills/peekaboo-gui-debugging/SKILL.md` with more details.
 
 ## Why We're Keeping AppleScript For Now
 
