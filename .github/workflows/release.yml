@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Update version in source
+        run: |
+          sed -i '' 's/static let version = ".*"/static let version = "${{ steps.version.outputs.VERSION }}"/' \
+            Sources/web-receipts/web_receipts.swift
+
+      - name: Build for arm64
+        run: swift build -c release --arch arm64
+
+      - name: Prepare binary
+        run: |
+          mkdir -p dist
+          cp .build/release/web-receipts dist/
+          cd dist && zip web-receipts-macos-arm64.zip web-receipts
+
+      - name: Get tag annotation
+        id: tag_message
+        run: |
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+          echo "MESSAGE<<EOF" >> $GITHUB_OUTPUT
+          echo "$TAG_MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.tag_message.outputs.MESSAGE }}
+          files: dist/web-receipts-macos-arm64.zip

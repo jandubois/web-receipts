@@ -110,9 +110,22 @@ struct WebReceipts {
         }
     }
 
-    // MARK: - Tab Title (Chrome only)
+    // MARK: - Tab Title
 
-    static func getTabTitle() throws -> String {
+    static func getSafariTabTitle() throws -> String {
+        let script = """
+            tell application "Safari"
+                return name of front document
+            end tell
+        """
+
+        guard let title = runAppleScript(script), !title.isEmpty else {
+            throw WebReceiptsError.noTitle
+        }
+        return title
+    }
+
+    static func getChromeTabTitle() throws -> String {
         let script = """
             tell application "Google Chrome"
                 return title of active tab of front window
@@ -125,7 +138,7 @@ struct WebReceipts {
         return title
     }
 
-    // MARK: - Filename Handling (Chrome only)
+    // MARK: - Filename Handling
 
     static func sanitizeFilename(_ filename: String) -> String {
         let invalidCharacters = CharacterSet(charactersIn: ":/\\")
@@ -163,18 +176,19 @@ struct WebReceipts {
     static func exportPDF(browser: Browser) throws {
         switch browser {
         case .safari:
-            try exportSafariPDF()
-            print("Saved to Web Receipts")
+            let title = try getSafariTabTitle()
+            let expectedFilename = generateUniqueFilename(base: sanitizeFilename(title))
+            try exportSafariPDF(expectedFilename: expectedFilename)
         case .chrome:
-            let title = try getTabTitle()
+            let title = try getChromeTabTitle()
             let filename = generateUniqueFilename(base: sanitizeFilename(title))
             try exportChromePDF(filename: filename)
             print("Saved: \(filename)")
         }
     }
 
-    // Safari: Use "Save to Web Receipts" PDF workflow (simple, handles everything)
-    static func exportSafariPDF() throws {
+    // Safari: Use "Save to Web Receipts" PDF workflow, then rename if needed
+    static func exportSafariPDF(expectedFilename: String) throws {
         let script = """
             tell application "Safari" to activate
             delay 0.3
@@ -205,6 +219,57 @@ struct WebReceipts {
         guard runAppleScript(script) != nil else {
             throw WebReceiptsError.appleScriptError("Failed to export Safari PDF")
         }
+
+        // Wait for file to be written
+        Thread.sleep(forTimeInterval: 1.0)
+
+        // Check if an "unnamed" file was created and rename it
+        let savedFilename = try renameUnnamedFileIfNeeded(to: expectedFilename)
+        print("Saved: \(savedFilename)")
+    }
+
+    // Find the most recently created "unnamed" PDF and rename to expected filename
+    static func renameUnnamedFileIfNeeded(to expectedFilename: String) throws -> String {
+        let fm = FileManager.default
+
+        let contents = try fm.contentsOfDirectory(
+            at: destinationFolder,
+            includingPropertiesForKeys: [.creationDateKey]
+        )
+
+        // Find all unnamed files with their creation dates
+        let cutoff = Date().addingTimeInterval(-10)
+        let unnamedFiles: [(url: URL, created: Date)] = contents.compactMap { url in
+            let name = url.deletingPathExtension().lastPathComponent.lowercased()
+            guard name.hasPrefix("unnamed") else { return nil }
+            guard let attrs = try? fm.attributesOfItem(atPath: url.path),
+                  let created = attrs[.creationDate] as? Date,
+                  created > cutoff else { return nil }
+            return (url, created)
+        }
+
+        // Get the most recently created unnamed file
+        if let newest = unnamedFiles.max(by: { $0.created < $1.created }) {
+            let newPath = destinationFolder.appendingPathComponent("\(expectedFilename).pdf")
+
+            // Handle case where target already exists (shouldn't happen, but be safe)
+            if fm.fileExists(atPath: newPath.path) {
+                try fm.removeItem(at: newPath)
+            }
+
+            try fm.moveItem(at: newest.url, to: newPath)
+            return expectedFilename
+        }
+
+        // No unnamed file found - either it saved with proper name or something else
+        // Check if expected file exists
+        let expectedPath = destinationFolder.appendingPathComponent("\(expectedFilename).pdf")
+        if fm.fileExists(atPath: expectedPath.path) {
+            return expectedFilename
+        }
+
+        // Return best guess
+        return "Web Receipts"
     }
 
     // Chrome: Manual approach (PDF Services workflows don't work in Chrome)
