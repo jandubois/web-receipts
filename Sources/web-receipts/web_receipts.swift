@@ -3,16 +3,52 @@ import AppKit
 
 @main
 struct WebReceipts {
+    static let version = "0.1.0"
     static let destinationFolder = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Documents/Web Receipts")
 
     static func main() {
+        let args = CommandLine.arguments.dropFirst()
+
+        if args.contains("--version") || args.contains("-v") {
+            print("web-receipts \(version)")
+            return
+        }
+
+        if args.contains("--help") || args.contains("-h") {
+            printHelp()
+            return
+        }
+
         do {
             try run()
         } catch {
             fputs("Error: \(error.localizedDescription)\n", stderr)
             exit(1)
         }
+    }
+
+    static func printHelp() {
+        print("""
+            web-receipts - Save browser tabs as PDF receipts
+
+            USAGE:
+                web-receipts [OPTIONS]
+
+            OPTIONS:
+                -h, --help      Show this help message
+                -v, --version   Show version number
+
+            DESCRIPTION:
+                Saves the current tab from the frontmost browser (Safari or Chrome)
+                as a PDF to ~/Documents/Web Receipts/
+
+                The filename is derived from the tab title. Duplicate filenames
+                are handled by appending .2, .3, etc.
+
+            SETUP:
+                Bind to a hotkey using Automator, Shortcuts, Alfred, or similar.
+            """)
     }
 
     static func run() throws {
