@@ -90,9 +90,22 @@ struct WebReceipts {
             tell application "Safari" to activate
             delay 0.5
 
+            -- Open Print dialog with Cmd+P
             tell application "System Events"
                 tell process "Safari"
-                    click menu item "Export as PDF…" of menu "File" of menu bar 1
+                    keystroke "p" using {command down}
+                end tell
+            end tell
+            delay 1
+
+            -- Click PDF menu and select "Save as PDF"
+            tell application "System Events"
+                tell process "Safari"
+                    tell sheet 1 of front window
+                        click menu button "PDF"
+                        delay 0.3
+                        click menu item "Save as PDF…" of menu 1 of menu button "PDF"
+                    end tell
                 end tell
             end tell
             delay 0.5
@@ -100,7 +113,7 @@ struct WebReceipts {
             -- Navigate to folder with Cmd+Shift+G
             tell application "System Events"
                 tell process "Safari"
-                    tell sheet 1 of front window
+                    tell sheet 1 of sheet 1 of front window
                         keystroke "g" using {command down, shift down}
                     end tell
                 end tell
@@ -115,7 +128,7 @@ struct WebReceipts {
             end tell
             delay 1
 
-            -- Press Return to Save (Save button is default)
+            -- Press Return to Save
             tell application "System Events"
                 keystroke return
             end tell
