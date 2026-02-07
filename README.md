@@ -7,6 +7,7 @@ A macOS command-line tool that saves the current browser tab as a PDF to `~/Docu
 - Supports Safari and Chrome
 - Uses the tab title as the filename
 - Handles duplicate filenames by appending `.2`, `.3`, etc.
+- Records the source URL in macOS metadata (Finder "Where from")
 - Designed to be triggered via hotkey
 
 ## Requirements
