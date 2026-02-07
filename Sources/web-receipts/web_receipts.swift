@@ -108,7 +108,7 @@ struct WebReceipts {
         }
     }
 
-    // MARK: - Tab Title
+    // MARK: - Tab Info
 
     static func getSafariTabTitle() throws -> String {
         let script = """
@@ -134,6 +134,25 @@ struct WebReceipts {
             throw WebReceiptsError.noTitle
         }
         return title
+    }
+
+    static func getTabURL(browser: Browser) -> String? {
+        let script: String
+        switch browser {
+        case .safari:
+            script = """
+                tell application "Safari"
+                    return URL of front document
+                end tell
+            """
+        case .chrome:
+            script = """
+                tell application "Google Chrome"
+                    return URL of active tab of front window
+                end tell
+            """
+        }
+        return runAppleScript(script)
     }
 
     // MARK: - Filename Handling
@@ -172,21 +191,31 @@ struct WebReceipts {
     // MARK: - PDF Export
 
     static func exportPDF(browser: Browser) throws {
+        let url = getTabURL(browser: browser)
+
+        let savedFile: URL
         switch browser {
         case .safari:
             let title = try getSafariTabTitle()
             let expectedFilename = generateUniqueFilename(base: sanitizeFilename(title))
-            try exportSafariPDF(expectedFilename: expectedFilename)
+            savedFile = try exportSafariPDF(expectedFilename: expectedFilename)
         case .chrome:
             let title = try getChromeTabTitle()
             let filename = generateUniqueFilename(base: sanitizeFilename(title))
             try exportChromePDF(filename: filename)
-            print("Saved: \(filename)")
+            savedFile = destinationFolder.appendingPathComponent("\(filename).pdf")
         }
+
+        if let url, !url.isEmpty {
+            setWhereFromsIfMissing(file: savedFile, url: url)
+        }
+
+        print("Saved: \(savedFile.lastPathComponent)")
     }
 
     // Safari: Use PDF menu's "Save to Web Receipts" option, then rename if needed
-    static func exportSafariPDF(expectedFilename: String) throws {
+    @discardableResult
+    static func exportSafariPDF(expectedFilename: String) throws -> URL {
         let script = """
             tell application "Safari" to activate
             delay 0.3
@@ -223,7 +252,7 @@ struct WebReceipts {
 
         // Check if an "unnamed" file was created and rename it
         let savedFilename = try renameUnnamedFileIfNeeded(to: expectedFilename)
-        print("Saved: \(savedFilename)")
+        return destinationFolder.appendingPathComponent("\(savedFilename).pdf")
     }
 
     // Find the most recently created "unnamed" PDF and rename to expected filename
@@ -347,6 +376,27 @@ struct WebReceipts {
 
         guard runAppleScript(script) != nil else {
             throw WebReceiptsError.appleScriptError("Failed to export Chrome PDF")
+        }
+    }
+
+    // MARK: - File Metadata
+
+    static let whereFromsKey = "com.apple.metadata:kMDItemWhereFroms"
+
+    static func setWhereFromsIfMissing(file: URL, url: String) {
+        let path = file.path
+
+        // Check if metadata already exists
+        let size = getxattr(path, whereFromsKey, nil, 0, 0, 0)
+        if size > 0 { return }
+
+        // Encode as binary plist array (the format macOS expects)
+        guard let plistData = try? PropertyListSerialization.data(
+            fromPropertyList: [url], format: .binary, options: 0
+        ) else { return }
+
+        _ = plistData.withUnsafeBytes { bytes in
+            setxattr(path, whereFromsKey, bytes.baseAddress, plistData.count, 0, 0)
         }
     }
 
