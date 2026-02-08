@@ -25,6 +25,7 @@ jobs:
           mkdir -p dist
           cp .build/release/web-receipts dist/
           cd dist && zip web-receipts-macos-arm64.zip web-receipts
+          shasum --algorithm 256 web-receipts-macos-arm64.zip > web-receipts-macos-arm64.zip.sha256
 
       - name: Get tag annotation
         id: tag_message
@@ -39,7 +40,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.tag_message.outputs.MESSAGE }}
-          files: dist/web-receipts-macos-arm64.zip
+          files: |
+            dist/web-receipts-macos-arm64.zip
+            dist/web-receipts-macos-arm64.zip.sha256
 
       - name: Update Homebrew tap
         env:
